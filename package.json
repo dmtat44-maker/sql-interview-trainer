@@ -1,0 +1,27 @@
+{
+  "name": "sql-interview-trainer-capacitor",
+  "version": "0.3.0",
+  "private": true,
+  "description": "SQL interview cards MVP wrapped with Capacitor for Android/iOS builds.",
+  "scripts": {
+    "check": "node scripts/check-www.js",
+    "serve": "npx serve www",
+    "cap:sync": "npx cap sync",
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npx cap run android",
+    "ios:add": "npx cap add ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/ios": "latest",
+    "serve": "latest"
+  }
+}

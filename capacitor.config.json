@@ -1,0 +1,12 @@
+{
+  "appId": "com.dmtat44.sqltrainer",
+  "appName": "SQL Interview Trainer",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#0f172a"
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}
