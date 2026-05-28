@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SQL Interview Trainer — Mobile v5</title>
+  <style>
+    :root{
+      --bg:#0f172a;--card:#16213b;--card2:#111c34;--line:rgba(255,255,255,.12);
+      --text:#eef4ff;--muted:#9fb0d0;--accent:#5eead4;--blue:#38bdf8;
+      --red:#fb7185;--green:#86efac;--yellow:#fde68a;--radius:20px;
+    }
+    *{box-sizing:border-box;min-width:0}
+    html,body{width:100%;max-width:100%;margin:0;overflow-x:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+    body{background:radial-gradient(circle at 0 0,rgba(94,234,212,.16),transparent 34%),radial-gradient(circle at 100% 0,rgba(56,189,248,.12),transparent 30%),var(--bg)}
+    button,input,select,textarea{font:inherit;max-width:100%}
+    .app{width:100%;max-width:1040px;margin:0 auto;padding:12px;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+    .hero,.panel,.trainer-card{width:100%;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.035));box-shadow:0 16px 44px rgba(0,0,0,.24)}
+    .hero{padding:18px;margin-bottom:12px}
+    .eyebrow{color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+    h1{font-size:clamp(24px,7vw,42px);line-height:1.05;margin:0 0 10px;overflow-wrap:anywhere}
+    .hero p{margin:0;color:var(--muted);line-height:1.45;font-size:15px}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+    .stat{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:16px;padding:12px}
+    .stat b{display:block;font-size:24px;line-height:1}.stat span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.25}
+    .panel{padding:12px;margin-bottom:12px}.controls{display:grid;grid-template-columns:1fr;gap:10px}.control-row{display:grid;grid-template-columns:1fr;gap:8px}.control-label{color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:var(--text);padding:12px;outline:none}
+    select option{color:#111827}textarea{min-height:120px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.45}
+    .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.chip,.btn{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.055);color:var(--text);padding:12px;cursor:pointer;font-weight:800;line-height:1.15}.chip.active,.btn.primary{border-color:rgba(94,234,212,.7);background:rgba(94,234,212,.14)}.btn.danger{border-color:rgba(251,113,133,.55)}.btn:disabled{opacity:.55;cursor:not-allowed}.actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}
+    .trainer-card{padding:16px}.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.badge{display:inline-flex;align-items:center;max-width:100%;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.055);color:var(--muted);font-size:12px;padding:7px 9px;white-space:normal;overflow-wrap:anywhere}.badge.topic{background:var(--accent);color:#06121f;border-color:transparent;font-weight:900}.badge.easy{color:#bbf7d0;border-color:rgba(134,239,172,.4)}.badge.mid{color:#fde68a;border-color:rgba(253,230,138,.4)}.badge.hard{color:#fecdd3;border-color:rgba(251,113,133,.4)}
+    .question{font-size:clamp(21px,6vw,32px);line-height:1.15;font-weight:900;margin:0 0 14px;overflow-wrap:anywhere}.schema,pre{width:100%;max-width:100%;border:1px solid var(--line);border-radius:16px;background:rgba(2,6,23,.55);padding:12px;color:#dbeafe;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden}.schema{margin:10px 0}.answers{display:grid;gap:8px;margin-top:10px}.answer{border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.05);padding:12px;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}.answer.selected{border-color:var(--blue);background:rgba(56,189,248,.14)}.answer.correct{border-color:rgba(134,239,172,.75);background:rgba(134,239,172,.13)}.answer.wrong{border-color:rgba(251,113,133,.75);background:rgba(251,113,133,.13)}
+    .result{display:none;margin-top:14px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.055);padding:14px}.result.show{display:block}.result h3{margin:0 0 8px;font-size:18px}.trap{color:var(--yellow);line-height:1.45}.muted{color:var(--muted);line-height:1.45}.progress{height:9px;background:rgba(255,255,255,.09);border-radius:999px;overflow:hidden;margin-top:12px}.bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));width:0}.notice{border:1px solid rgba(94,234,212,.35);border-radius:16px;background:rgba(94,234,212,.08);padding:12px;color:var(--muted);line-height:1.45;margin-top:12px}.answer-box{margin-top:12px;border:1px solid rgba(94,234,212,.28);border-radius:18px;background:rgba(94,234,212,.055);padding:12px}.answer-label{display:block;margin-bottom:8px;color:var(--accent);font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.answer-hint{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.35}.my-answer{margin:0 0 12px;border:1px solid rgba(56,189,248,.3);border-radius:16px;background:rgba(56,189,248,.07);padding:12px}.my-answer h3{margin:0 0 8px!important;font-size:16px!important}.my-answer pre{margin:0}.hide{display:none!important}
+    @media(min-width:720px){.app{padding:22px}.hero{padding:24px}.stats{grid-template-columns:repeat(4,1fr)}.controls{grid-template-columns:1.2fr .8fr}.control-row.wide{grid-column:1/-1}.chips{grid-template-columns:repeat(4,1fr)}.actions{grid-template-columns:repeat(3,1fr)}.actions .wide{grid-column:1/-1}.trainer-card{padding:22px}.btn.secondary-wide{grid-column:auto}}
+    @media(max-width:430px){.app{padding:10px}.hero,.panel,.trainer-card{border-radius:18px}.stat{padding:10px}.chip,.btn{padding:12px 10px}.question{font-size:22px}.schema,pre{font-size:12.5px;padding:10px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <div class="eyebrow">SQL Interview Trainer · Mobile v5</div>
+      <h1>SQL-карточки без горизонтальной прокрутки</h1>
+      <p>Версия специально под телефон: экран двигается только вверх-вниз. Длинные вопросы, SQL-код и кнопки переносятся внутри ширины экрана.</p>
+      <div class="stats">
+        <div class="stat"><b id="statTotal">0</b><span>карточек</span></div>
+        <div class="stat"><b id="statDone">0</b><span>пройдено</span></div>
+        <div class="stat"><b id="statAccuracy">0%</b><span>точность</span></div>
+        <div class="stat"><b id="statStreak">0</b><span>серия</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <div class="control-row">
+          <div class="control-label">Тема</div>
+          <select id="topicSelect"></select>
+        </div>
+        <div class="control-row">
+          <div class="control-label">Формат</div>
+          <select id="modeSelect">
+            <option value="all">Все форматы</option>
+            <option value="choice">Выбор ответа</option>
+            <option value="write_sql">Написать SQL</option>
+            <option value="debug">Найти ошибку</option>
+            <option value="theory">Теория</option>
+          </select>
+        </div>
+        <div class="control-row wide">
+          <div class="control-label">Поиск</div>
+          <input id="search" type="search" placeholder="join, where, null, rank, having..." />
+        </div>
+        <div class="control-row wide">
+          <div class="control-label">Сложность</div>
+          <div class="chips" id="levelChips">
+            <button class="chip active" data-level="all">Все</button>
+            <button class="chip" data-level="easy">База</button>
+            <button class="chip" data-level="mid">Средний</button>
+            <button class="chip" data-level="hard">Сложный</button>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="randomBtn">Случайная карточка</button>
+        <button class="btn" id="generateBtn">Сгенерировать похожий вопрос</button>
+        <button class="btn danger" id="resetBtn">Сбросить прогресс</button>
+      </div>
+    </section>
+
+    <main class="trainer-card" id="card"></main>
+  </div>
+
+  <script>
+    const LEVELS={easy:'База',mid:'Средний',hard:'Сложный'};
+    const TYPES={choice:'Выбор ответа',write_sql:'Написать SQL',debug:'Найти ошибку',theory:'Теория'};
+    function card(topic,level,type,q,answer,extra={}){return{id:'base_'+Math.random().toString(36).slice(2),topic,level,type,q,answer,...extra}}
+    const baseCards=[
+      card('SELECT / WHERE','easy','choice','Что делает WHERE в SQL-запросе?','WHERE фильтрует строки до группировки. Для фильтрации агрегированных групп используется HAVING.',{options:['Фильтрует строки до GROUP BY','Фильтрует группы после GROUP BY','Сортирует строки','Удаляет дубликаты'],correct:0,trap:'Не путать WHERE и HAVING.',example:`SELECT *\nFROM orders\nWHERE status = 'paid';`}),
+      card('SELECT / WHERE','mid','write_sql','Найдите оплаченные заказы дороже 5000 за 2026 год.',`SELECT order_id, user_id, amount, created_at\nFROM orders\nWHERE status = 'paid'\n  AND amount > 5000\n  AND created_at >= DATE '2026-01-01'\n  AND created_at <  DATE '2027-01-01';`,{schema:'orders(order_id, user_id, amount, status, created_at)',trap:'Диапазон дат обычно лучше, чем YEAR(created_at) = 2026.'}),
+      card('SELECT / WHERE','hard','debug','Почему этот запрос может вернуть не весь день?',`Если created_at — timestamp, равенство DATE поймает только полночь. Надёжнее диапазон:\n\nSELECT *\nFROM orders\nWHERE created_at >= DATE '2026-05-26'\n  AND created_at <  DATE '2026-05-27';`,{example:`SELECT *\nFROM orders\nWHERE created_at = DATE '2026-05-26';`,trap:'Классическая ловушка с timestamp.'}),
+
+      card('JOIN','easy','choice','Что вернёт INNER JOIN?','INNER JOIN возвращает только строки, где есть совпадение в обеих таблицах.',{options:['Все строки из левой таблицы','Только совпавшие строки','Все строки из обеих таблиц','Только строки без совпадения'],correct:1,trap:'Если справа несколько совпадений, строки слева размножатся.'}),
+      card('JOIN','mid','write_sql','Выведите пользователей и количество их заказов, включая пользователей без заказов.',`SELECT u.user_id, u.name, COUNT(o.order_id) AS orders_count\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.user_id\nGROUP BY u.user_id, u.name;`,{schema:'users(user_id, name)\norders(order_id, user_id)',trap:'COUNT(o.order_id), а не COUNT(*), иначе пользователь без заказов получит 1.'}),
+      card('JOIN','hard','debug','Найдите ошибку: нужно сохранить всех пользователей, даже без paid-заказов.',`Фильтр o.status = 'paid' в WHERE ломает LEFT JOIN. Его нужно перенести в ON:\n\nSELECT u.user_id, u.name, COALESCE(SUM(o.amount),0) AS paid_sum\nFROM users u\nLEFT JOIN orders o\n  ON o.user_id = u.user_id\n AND o.status = 'paid'\nGROUP BY u.user_id, u.name;`,{example:`SELECT u.user_id, u.name, SUM(o.amount) AS paid_sum\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.user_id\nWHERE o.status = 'paid'\nGROUP BY u.user_id, u.name;`,trap:'Фильтр по правой таблице в WHERE превращает LEFT JOIN почти в INNER JOIN.'}),
+
+      card('GROUP BY / HAVING','easy','choice','Когда используется HAVING?','HAVING фильтрует группы после GROUP BY.',{options:['До группировки','После GROUP BY','Для JOIN','Для сортировки'],correct:1,trap:'Агрегаты вроде COUNT(*) > 5 фильтруются через HAVING.'}),
+      card('GROUP BY / HAVING','mid','write_sql','Найдите пользователей, у которых сумма paid-заказов больше 10000.',`SELECT user_id, SUM(amount) AS paid_amount\nFROM orders\nWHERE status = 'paid'\nGROUP BY user_id\nHAVING SUM(amount) > 10000;`,{schema:'orders(order_id, user_id, amount, status)',trap:'WHERE фильтрует строки, HAVING фильтрует итоговые группы.'}),
+      card('GROUP BY / HAVING','hard','debug','Почему запрос некорректен в PostgreSQL?',`В SELECT есть status, но его нет в GROUP BY и он не агрегирован. Нужно добавить status в GROUP BY или агрегировать его.`,{example:`SELECT user_id, status, COUNT(*)\nFROM orders\nGROUP BY user_id;`,trap:'В строгом SQL все неагрегированные поля SELECT должны быть в GROUP BY.'}),
+
+      card('Подзапросы','easy','choice','Что такое коррелированный подзапрос?','Это подзапрос, который ссылается на колонки внешнего запроса.',{options:['Независимый подзапрос','Подзапрос с колонками внешнего запроса','Только подзапрос в FROM','Любой GROUP BY'],correct:1,trap:'Может быть понятным, но иногда медленнее JOIN или оконной функции.'}),
+      card('Подзапросы','mid','write_sql','Найдите заказы больше среднего заказа по всей таблице.',`SELECT order_id, user_id, amount\nFROM orders\nWHERE amount > (SELECT AVG(amount) FROM orders);`,{schema:'orders(order_id, user_id, amount)',trap:'Это независимый подзапрос: среднее считается по всей таблице.'}),
+      card('Подзапросы','hard','write_sql','Найдите товары дороже средней цены в своей категории.',`SELECT p.product_id, p.category_id, p.name, p.price\nFROM products p\nWHERE p.price > (\n  SELECT AVG(p2.price)\n  FROM products p2\n  WHERE p2.category_id = p.category_id\n);`,{schema:'products(product_id, category_id, name, price)',trap:'Это коррелированный подзапрос по категории текущего товара.'}),
+
+      card('CTE','easy','choice','С какого слова начинается CTE?','CTE начинается с WITH.',{options:['WITH','HAVING','WINDOW','INDEX'],correct:0,trap:'CTE — инструмент читаемости и разбиения запроса на шаги.'}),
+      card('CTE','mid','write_sql','Через CTE посчитайте выручку по paid-заказам по пользователям.',`WITH paid_orders AS (\n  SELECT user_id, amount\n  FROM orders\n  WHERE status = 'paid'\n)\nSELECT user_id, SUM(amount) AS revenue\nFROM paid_orders\nGROUP BY user_id;`,{schema:'orders(order_id, user_id, amount, status)',trap:'CTE делает шаг фильтрации явным.'}),
+      card('CTE','hard','write_sql','Через CTE найдите пользователей, у которых второй заказ дороже первого.',`WITH ranked AS (\n  SELECT o.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at, order_id) AS rn\n  FROM orders o\n), first_second AS (\n  SELECT user_id,\n         MAX(CASE WHEN rn = 1 THEN amount END) AS first_amount,\n         MAX(CASE WHEN rn = 2 THEN amount END) AS second_amount\n  FROM ranked\n  WHERE rn IN (1,2)\n  GROUP BY user_id\n)\nSELECT user_id, first_amount, second_amount\nFROM first_second\nWHERE second_amount > first_amount;`,{schema:'orders(order_id, user_id, amount, created_at)',trap:'Комбинация CTE, окна и условной агрегации.'}),
+
+      card('Оконные функции','easy','choice','Чем оконная функция отличается от GROUP BY?','GROUP BY схлопывает строки, оконная функция добавляет расчёт и сохраняет строки.',{options:['Окна сохраняют строки','Окна всегда удаляют дубли','GROUP BY сохраняет все строки','Разницы нет'],correct:0,trap:'Ключевой паттерн для rank, top-N, running total.'}),
+      card('Оконные функции','mid','write_sql','Пронумеруйте заказы каждого пользователя от нового к старому.',`SELECT order_id, user_id, created_at,\n       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn\nFROM orders;`,{schema:'orders(order_id, user_id, created_at)',trap:'При одинаковых датах добавьте order_id в ORDER BY.'}),
+      card('Оконные функции','hard','write_sql','Для каждого пользователя найдите самый дорогой заказ, включая равные максимумы.',`WITH ranked AS (\n  SELECT o.*, RANK() OVER (PARTITION BY user_id ORDER BY amount DESC) AS rnk\n  FROM orders o\n)\nSELECT order_id, user_id, amount\nFROM ranked\nWHERE rnk = 1;`,{schema:'orders(order_id, user_id, amount)',trap:'RANK вернёт все равные максимумы, ROW_NUMBER — только одну строку.'}),
+
+      card('CASE / условная агрегация','easy','choice','Что делает CASE WHEN?','Возвращает значение по первому выполненному условию.',{options:['Проверяет условие и возвращает значение','Создаёт индекс','Удаляет таблицу','Только сортирует'],correct:0,trap:'Если ELSE не указан и условие не выполнено, вернётся NULL.'}),
+      card('CASE / условная агрегация','mid','write_sql','Посчитайте paid и cancelled заказы по каждому пользователю.',`SELECT user_id,\n       SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_orders,\n       SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_orders\nFROM orders\nGROUP BY user_id;`,{schema:'orders(order_id, user_id, status)',trap:'Не пишите COUNT(CASE WHEN ... THEN 0 END): 0 тоже считается.'}),
+      card('CASE / условная агрегация','hard','write_sql','Посчитайте долю отменённых заказов по каждому пользователю.',`SELECT user_id,\n       SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END)::decimal / COUNT(*) AS cancel_rate\nFROM orders\nGROUP BY user_id;`,{schema:'orders(order_id, user_id, status)',trap:'Нужно привести к decimal, чтобы избежать целочисленного деления.'}),
+
+      card('NULL / дубликаты','easy','choice','Как правильно проверить NULL?','Использовать IS NULL или IS NOT NULL.',{options:['col = NULL','col IS NULL','col == NULL','col IN NULL'],correct:1,trap:'NULL — неизвестное значение, сравнение через = не работает.'}),
+      card('NULL / дубликаты','mid','write_sql','Найдите email, которые встречаются больше одного раза.',`SELECT email, COUNT(*) AS cnt\nFROM users\nWHERE email IS NOT NULL\nGROUP BY email\nHAVING COUNT(*) > 1;`,{schema:'users(user_id, email)',trap:'NULL лучше исключить, если ищем реальные дубли email.'}),
+      card('NULL / дубликаты','hard','debug','Почему NOT IN может вернуть неожиданный пустой результат?',`Если подзапрос вернёт NULL, NOT IN может дать UNKNOWN и убрать все строки. Безопаснее NOT EXISTS:\n\nSELECT u.user_id\nFROM users u\nWHERE NOT EXISTS (\n  SELECT 1 FROM blocked_users b WHERE b.user_id = u.user_id\n);`,{example:`SELECT user_id\nFROM users\nWHERE user_id NOT IN (SELECT user_id FROM blocked_users);`,trap:'NULL ломает привычную булеву логику.'}),
+
+      card('Даты','easy','choice','Почему для дня лучше использовать диапазон дат?','Чтобы корректно поймать все timestamp внутри дня.',{options:['Чтобы поймать весь день','Чтобы удалить дубли','Чтобы заменить JOIN','Чтобы создать индекс'],correct:0,trap:'created_at = DATE часто ловит только полночь.'}),
+      card('Даты','mid','write_sql','Посчитайте количество заказов по месяцам за 2026 год.',`SELECT DATE_TRUNC('month', created_at) AS month, COUNT(*) AS orders_count\nFROM orders\nWHERE created_at >= DATE '2026-01-01'\n  AND created_at <  DATE '2027-01-01'\nGROUP BY DATE_TRUNC('month', created_at)\nORDER BY month;`,{schema:'orders(order_id, created_at)',trap:'Синтаксис функций дат зависит от СУБД.'}),
+      card('Бизнес-кейсы','hard','write_sql','Найдите top-3 товара по выручке в каждой категории.',`WITH revenue AS (\n  SELECT p.category_id, p.product_id, p.name, SUM(oi.quantity * oi.price) AS revenue\n  FROM products p\n  JOIN order_items oi ON oi.product_id = p.product_id\n  GROUP BY p.category_id, p.product_id, p.name\n), ranked AS (\n  SELECT revenue.*, DENSE_RANK() OVER (PARTITION BY category_id ORDER BY revenue DESC) AS rnk\n  FROM revenue\n)\nSELECT category_id, product_id, name, revenue\nFROM ranked\nWHERE rnk <= 3;`,{schema:'products(product_id, category_id, name)\norder_items(order_id, product_id, quantity, price)',trap:'DENSE_RANK может вернуть больше трёх строк при равенстве выручки.'})
+    ];
+    baseCards.forEach((x,i)=>x.id='base_'+(i+1));
+
+    const generatedBank={
+      'SELECT / WHERE':[
+        ['easy','Найдите все заказы со статусом refunded.','orders(order_id, status)',`SELECT *\nFROM orders\nWHERE status = 'refunded';`,'Базовый WHERE.'],
+        ['mid','Найдите пользователей с gmail-почтой и заполненной датой регистрации.','users(user_id, email, registered_at)',`SELECT user_id, email\nFROM users\nWHERE email LIKE '%@gmail.com'\n  AND registered_at IS NOT NULL;`,'LIKE + IS NOT NULL.'],
+        ['hard','Найдите заказы за последние 30 дней без функции вокруг created_at.','orders(order_id, created_at)',`SELECT *\nFROM orders\nWHERE created_at >= CURRENT_DATE - INTERVAL '30 days';`,'Такой фильтр лучше дружит с индексом.']
+      ],
+      'JOIN':[
+        ['easy','Соедините заказы с пользователями и выведите имя пользователя.','users(user_id, name)\norders(order_id, user_id)',`SELECT o.order_id, u.name\nFROM orders o\nJOIN users u ON u.user_id = o.user_id;`,'Базовый INNER JOIN.'],
+        ['mid','Найдите пользователей без заказов.','users(user_id, name)\norders(order_id, user_id)',`SELECT u.user_id, u.name\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.user_id\nWHERE o.order_id IS NULL;`,'Anti-join через LEFT JOIN + IS NULL.'],
+        ['hard','Найдите пользователей без paid-заказов, не потеряв пользователей без заказов вообще.','users(user_id)\norders(order_id, user_id, status)',`SELECT u.user_id\nFROM users u\nLEFT JOIN orders o\n  ON o.user_id = u.user_id\n AND o.status = 'paid'\nWHERE o.order_id IS NULL;`,'Фильтр paid должен быть в ON.']
+      ],
+      'GROUP BY / HAVING':[
+        ['easy','Посчитайте количество пользователей по городам.','users(user_id, city)',`SELECT city, COUNT(*) AS users_count\nFROM users\nGROUP BY city;`,'Базовая группировка.'],
+        ['mid','Найдите дни, когда было больше 100 заказов.','orders(order_id, created_at)',`SELECT DATE_TRUNC('day', created_at) AS day, COUNT(*)\nFROM orders\nGROUP BY DATE_TRUNC('day', created_at)\nHAVING COUNT(*) > 100;`,'Фильтр по агрегату через HAVING.'],
+        ['hard','Найдите категории, где средняя цена выше средней цены по всем товарам.','products(product_id, category_id, price)',`SELECT category_id, AVG(price) AS avg_price\nFROM products\nGROUP BY category_id\nHAVING AVG(price) > (SELECT AVG(price) FROM products);`,'HAVING + подзапрос.']
+      ],
+      'Оконные функции':[
+        ['easy','Добавьте к каждому заказу общую сумму всех заказов.','orders(order_id, amount)',`SELECT order_id, amount, SUM(amount) OVER () AS total_amount\nFROM orders;`,'OVER() без PARTITION считает по всему набору.'],
+        ['mid','Найдите первый заказ каждого пользователя.','orders(order_id, user_id, created_at)',`WITH ranked AS (\n  SELECT o.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at) AS rn\n  FROM orders o\n)\nSELECT * FROM ranked WHERE rn = 1;`,'ROW_NUMBER выбирает одну строку.'],
+        ['hard','Посчитайте разницу между текущим и предыдущим заказом пользователя.','orders(order_id, user_id, amount, created_at)',`SELECT order_id, user_id, amount,\n       amount - LAG(amount) OVER (PARTITION BY user_id ORDER BY created_at) AS diff_from_prev\nFROM orders;`,'LAG берёт значение предыдущей строки окна.']
+      ],
+      'Бизнес-кейсы':[
+        ['easy','Что будет числителем и знаменателем в конверсии регистрация → покупка?','users, orders','Числитель: пользователи с покупкой. Знаменатель: все зарегистрированные пользователи в выбранном периоде.','Перед SQL важно уточнить метрику.'],
+        ['mid','Посчитайте средний чек paid-заказов по месяцам.','orders(order_id, amount, status, created_at)',`SELECT DATE_TRUNC('month', created_at) AS month, AVG(amount) AS avg_check\nFROM orders\nWHERE status = 'paid'\nGROUP BY DATE_TRUNC('month', created_at);`,'Бизнес-метрика + даты + агрегат.'],
+        ['hard','Найдите пользователей, сделавших второй заказ в течение 7 дней после первого.','orders(order_id, user_id, created_at)',`WITH ranked AS (\n  SELECT o.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at) AS rn\n  FROM orders o\n), pairs AS (\n  SELECT user_id,\n         MAX(CASE WHEN rn = 1 THEN created_at END) AS first_at,\n         MAX(CASE WHEN rn = 2 THEN created_at END) AS second_at\n  FROM ranked\n  WHERE rn IN (1,2)\n  GROUP BY user_id\n)\nSELECT *\nFROM pairs\nWHERE second_at < first_at + INTERVAL '7 days';`,'Окна + CASE + бизнес-логика.']
+      ]
+    };
+
+    const storagePrefix='sqlTrainerMobileV4';
+    const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(storagePrefix+k)||JSON.stringify(f))}catch(e){return f}};
+    const state={topic:'Все',level:'all',mode:'all',search:'',currentId:null,selected:null,revealed:false,generated:null,custom:read('Custom',[]),progress:read('Progress',{done:{},right:0,wrong:0,streak:0}),answers:read('AnswersV5',{})};
+    let cards=[...baseCards,...state.custom];
+    const $=id=>document.getElementById(id);
+    function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+    function save(){localStorage.setItem(storagePrefix+'Custom',JSON.stringify(state.custom));localStorage.setItem(storagePrefix+'Progress',JSON.stringify(state.progress));localStorage.setItem(storagePrefix+'AnswersV5',JSON.stringify(state.answers));cards=[...baseCards,...state.custom];renderTopicSelect();updateStats()}function saveAnswers(){localStorage.setItem(storagePrefix+'AnswersV5',JSON.stringify(state.answers))}function getUserAnswer(id){return state.answers[id]||''}function setUserAnswer(id,value){state.answers[id]=value;saveAnswers()}function answerPlaceholder(x){if(x.type==='debug')return 'Напишите, в чём ошибка запроса и как её исправить. Например: фильтр по правой таблице в WHERE ломает LEFT JOIN...';if(x.type==='theory')return 'Напишите объяснение своими словами, как на собеседовании.';return 'Напишите свой SQL здесь. Потом нажмите «Показать правильный ответ».'}
+    function topics(){return ['Все',...Array.from(new Set(cards.map(x=>x.topic)))]}
+    function renderTopicSelect(){const select=$('topicSelect');const old=select.value||state.topic;select.innerHTML=topics().map(t=>`<option value="${esc(t)}">${esc(t)} (${t==='Все'?cards.length:cards.filter(x=>x.topic===t).length})</option>`).join('');select.value=topics().includes(old)?old:'Все'}
+    function filtered(){const s=state.search.trim().toLowerCase();return cards.filter(x=>(state.topic==='Все'||x.topic===state.topic)&&(state.level==='all'||x.level===state.level)&&(state.mode==='all'||x.type===state.mode)&&(!s||[x.topic,x.q,x.answer,x.trap,x.schema,x.example].join(' ').toLowerCase().includes(s)))}
+    function updateStats(){const total=state.progress.right+state.progress.wrong;$('statTotal').textContent=cards.length;$('statDone').textContent=Object.keys(state.progress.done).length;$('statAccuracy').textContent=total?Math.round(state.progress.right/total*100)+'%':'0%';$('statStreak').textContent=state.progress.streak}
+    function show(id){state.currentId=id;state.selected=null;state.revealed=false;state.generated=null;renderCard();window.scrollTo({top:0,behavior:'smooth'})}
+    function pickFirst(){const list=filtered();list[0]?show(list[0].id):renderEmpty()}
+    function pickRandom(){const list=filtered();list.length?show(list[Math.floor(Math.random()*list.length)].id):renderEmpty()}
+    function current(){return cards.find(x=>x.id===state.currentId)}
+    function renderEmpty(){$('card').innerHTML=`<div class="question">По таким фильтрам карточек нет</div><p class="muted">Сбросьте тему, сложность или формат. Горизонтальной прокрутки здесь быть не должно.</p>`}
+    function renderCard(){if(state.generated)return renderGenerated();const x=current();if(!x)return renderEmpty();const done=state.progress.done[x.id];const custom=String(x.id).startsWith('custom_');let html=`<div class="badges"><span class="badge topic">${esc(x.topic)}</span><span class="badge ${x.level}">${esc(LEVELS[x.level])}</span><span class="badge">${esc(TYPES[x.type])}</span>${custom?'<span class="badge">добавлено</span>':''}${done?'<span class="badge">пройдено</span>':''}</div><div class="question">${esc(x.q)}</div>`;if(x.schema)html+=`<div class="schema">${esc(x.schema)}</div>`;if(x.example)html+=`<pre>${esc(x.example)}</pre>`;if(x.type==='choice'){html+=`<div class="answers">${x.options.map((o,i)=>{let cls='answer';if(state.selected===i)cls+=' selected';if(state.revealed&&i===x.correct)cls+=' correct';if(state.revealed&&state.selected===i&&i!==x.correct)cls+=' wrong';return`<div class="${cls}" data-i="${i}">${esc(o)}</div>`}).join('')}</div>`}else{html+=`<div class="answer-box"><label class="answer-label" for="userAnswer">Ваш ответ</label><textarea id="userAnswer" placeholder="${esc(answerPlaceholder(x))}" spellcheck="false">${esc(getUserAnswer(x.id))}</textarea><div class="answer-hint">Сначала напишите свой вариант, потом откройте правильный ответ и сравните.</div></div>`}const myAnswer=getUserAnswer(x.id).trim();html+=`<div class="actions">${x.type==='choice'?'<button class="btn primary" id="checkBtn">Проверить</button>':'<button class="btn primary" id="revealBtn">Показать правильный ответ</button>'}<button class="btn" id="knowBtn">Знаю</button><button class="btn" id="repeatBtn">Повторить позже</button><button class="btn" id="nextBtn">Следующая</button>${custom?'<button class="btn danger wide" id="deleteBtn">Удалить из базы</button>':''}</div><div class="result ${state.revealed?'show':''}">${x.type!=='choice'?`<div class="my-answer"><h3>Мой ответ</h3><pre>${esc(myAnswer||'Пока не написан')}</pre></div>`:''}<h3>Правильный ответ</h3>${x.type==='choice'?`<p><b>${esc(x.options[x.correct])}</b></p>`:''}<pre>${esc(x.answer)}</pre>${x.trap?`<p class="trap"><b>Ловушка:</b> ${esc(x.trap)}</p>`:''}</div><div class="progress"><div class="bar" style="width:${Math.round(Object.keys(state.progress.done).length/Math.max(cards.length,1)*100)}%"></div></div>`;$('card').innerHTML=html;document.querySelectorAll('.answer').forEach(el=>el.onclick=()=>{if(!state.revealed){state.selected=Number(el.dataset.i);renderCard()}});const userAnswer=$('userAnswer');if(userAnswer)userAnswer.oninput=()=>setUserAnswer(x.id,userAnswer.value);const check=$('checkBtn');if(check)check.onclick=()=>{if(state.selected!==null)mark(state.selected===current().correct)};const reveal=$('revealBtn');if(reveal)reveal.onclick=()=>{const ua=$('userAnswer');if(ua)setUserAnswer(x.id,ua.value);state.revealed=true;renderCard()};$('knowBtn').onclick=()=>mark(true);$('repeatBtn').onclick=()=>mark(false);$('nextBtn').onclick=next;const del=$('deleteBtn');if(del)del.onclick=()=>deleteCustom(x.id)}
+    function mark(right){const x=current();state.progress.done[x.id]=right?'right':'wrong';if(right){state.progress.right++;state.progress.streak++}else{state.progress.wrong++;state.progress.streak=0}state.revealed=true;save();renderCard()}
+    function next(){const list=filtered();if(!list.length)return renderEmpty();const i=list.findIndex(x=>x.id===state.currentId);show(list[(i+1+list.length)%list.length].id)}
+    function generate(){const possible=Object.keys(generatedBank);const topic=state.topic!=='Все'&&generatedBank[state.topic]?state.topic:possible[Math.floor(Math.random()*possible.length)];let pool=generatedBank[topic];let variants=pool.filter(x=>state.level==='all'||x[0]===state.level);if(!variants.length)variants=pool;const v=variants[Math.floor(Math.random()*variants.length)];state.generated={id:null,topic,level:v[0],type:'write_sql',q:v[1],schema:v[2],answer:v[3],trap:v[4]};renderGenerated();window.scrollTo({top:0,behavior:'smooth'})}
+    function renderGenerated(){const x=state.generated;const added=!!x.id;const tempId=x.id||'generated_current';const saved=getUserAnswer(tempId);$('card').innerHTML=`<div class="badges"><span class="badge topic">${esc(x.topic)}</span><span class="badge ${x.level}">${esc(LEVELS[x.level])}</span><span class="badge">Сгенерированный</span></div><div class="question">${esc(x.q)}</div><div class="schema">${esc(x.schema)}</div><div class="answer-box"><label class="answer-label" for="genAnswer">Ваш ответ</label><textarea id="genAnswer" placeholder="Попробуйте написать решение. Потом сравните с правильным ответом." spellcheck="false">${esc(saved)}</textarea><div class="answer-hint">Если вопрос полезный, нажмите «Добавить вопрос в базу» — ваш ответ тоже сохранится в этой карточке.</div></div><div class="actions"><button class="btn primary" id="showGen">Показать правильный ответ</button><button class="btn" id="addGen" ${added?'disabled':''}>${added?'Уже добавлено':'Добавить вопрос в базу'}</button><button class="btn ${added?'':'hide'}" id="openGen">Открыть карточку</button><button class="btn" id="moreGen">Ещё вариант</button><button class="btn" id="backBtn">Назад к карточкам</button></div><div class="result" id="genResult"><div class="my-answer"><h3>Мой ответ</h3><pre id="genMine">${esc(saved||'Пока не написан')}</pre></div><h3>Правильный ответ</h3><pre>${esc(x.answer)}</pre><p class="trap"><b>Что проверяют:</b> ${esc(x.trap)}</p></div><div class="notice">Это mobile v5: экран двигается только вверх-вниз, а в карточках «Написать SQL», «Найти ошибку» и «Теория» появилось поле «Ваш ответ».</div>`;const genAnswer=$('genAnswer');if(genAnswer)genAnswer.oninput=()=>setUserAnswer(tempId,genAnswer.value);$('showGen').onclick=()=>{const ga=$('genAnswer');if(ga){setUserAnswer(tempId,ga.value);$('genMine').textContent=ga.value.trim()||'Пока не написан'}$('genResult').classList.add('show')};$('addGen').onclick=addGenerated;$('moreGen').onclick=generate;$('backBtn').onclick=()=>{state.generated=null;renderCard()};$('openGen').onclick=()=>{if(x.id)show(x.id)}}
+    function addGenerated(){const x=state.generated;if(!x||x.id)return;const ga=$('genAnswer');const currentText=ga?ga.value:getUserAnswer('generated_current');const newCard={id:'custom_'+Date.now(),topic:x.topic,level:x.level,type:'write_sql',q:x.q,schema:x.schema,answer:x.answer,trap:x.trap};state.custom.push(newCard);x.id=newCard.id;if(currentText)setUserAnswer(newCard.id,currentText);delete state.answers.generated_current;save();renderGenerated()}
+    function deleteCustom(id){if(!confirm('Удалить добавленный вопрос из базы?'))return;state.custom=state.custom.filter(x=>x.id!==id);delete state.progress.done[id];save();pickFirst()}
+    function reset(){if(!confirm('Сбросить прогресс? Добавленные вопросы останутся.'))return;state.progress={done:{},right:0,wrong:0,streak:0};save();renderCard()}
+    $('topicSelect').onchange=e=>{state.topic=e.target.value;pickFirst()};$('modeSelect').onchange=e=>{state.mode=e.target.value;pickFirst()};$('search').oninput=e=>{state.search=e.target.value;pickFirst()};document.querySelectorAll('#levelChips .chip').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('#levelChips .chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');state.level=btn.dataset.level;pickFirst()});$('randomBtn').onclick=pickRandom;$('generateBtn').onclick=generate;$('resetBtn').onclick=reset;renderTopicSelect();updateStats();show(cards[0].id);
+  </script>
+</body>
+</html>
