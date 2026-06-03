@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SQL Interview Trainer</string>
+    <string name="title_activity_main">SQL Interview Trainer</string>
+    <string name="package_name">com.dmtat44.sqltrainer</string>
+    <string name="custom_url_scheme">com.dmtat44.sqltrainer</string>
+</resources>
