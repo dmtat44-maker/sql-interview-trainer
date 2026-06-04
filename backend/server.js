@@ -252,6 +252,35 @@ app.get('/health', (_req, res) => {
   });
 });
 
+
+app.get('/topic-stats', async (_req, res) => {
+  try {
+    if (!supabase) {
+      const counts = memoryQuestions.reduce((acc, q) => {
+        acc[q.topic] = (acc[q.topic] || 0) + 1;
+        return acc;
+      }, {});
+      return res.json(counts);
+    }
+
+    const { data, error } = await supabase
+      .from('questions')
+      .select('topic')
+      .eq('status', 'active');
+
+    if (error) throw error;
+
+    const counts = (data || []).reduce((acc, q) => {
+      acc[q.topic] = (acc[q.topic] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json(counts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/questions', async (req, res) => {
   try {
     const { topic, level } = req.query;
