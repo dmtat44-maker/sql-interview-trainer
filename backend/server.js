@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
 const app = express();
+const SERVER_VERSION = 'v22';
+const SERVER_BUILD = '2026-06-04';
 const PORT = Number(process.env.PORT || 3000);
 const AI_PROVIDER = String(process.env.AI_PROVIDER || 'ollama').trim().toLowerCase();
 
@@ -34,6 +36,79 @@ const supabase = hasRealValue(process.env.SUPABASE_URL) && hasRealValue(process.
   : null;
 
 const memoryQuestions = [];
+
+function normalizeTextForDuplicate(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[«»"'`.,:;!?()[\]{}<>\/\\|+=*_~^$#@%&-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenSet(text) {
+  return new Set(normalizeTextForDuplicate(text).split(' ').filter(t => t.length > 2));
+}
+
+function jaccardSimilarity(a, b) {
+  const aa = tokenSet(a);
+  const bb = tokenSet(b);
+  if (!aa.size || !bb.size) return 0;
+  let intersection = 0;
+  for (const t of aa) if (bb.has(t)) intersection++;
+  const union = aa.size + bb.size - intersection;
+  return union ? intersection / union : 0;
+}
+
+function looksCorruptedText(text) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  const qMarks = (value.match(/\?/g) || []).length;
+  const letters = (value.match(/[A-Za-zА-Яа-яЁё]/g) || []).length;
+  return qMarks >= 5 && qMarks > letters;
+}
+
+function duplicateScore(candidate, existing) {
+  const candidateNorm = normalizeTextForDuplicate(candidate.question);
+  const existingNorm = normalizeTextForDuplicate(existing.question);
+  if (!candidateNorm || !existingNorm) return 0;
+  if (candidateNorm === existingNorm) return 1;
+  if (candidateNorm.includes(existingNorm) || existingNorm.includes(candidateNorm)) return 0.96;
+  return jaccardSimilarity(candidate.question, existing.question);
+}
+
+async function loadExistingQuestions(topic = '') {
+  if (!supabase) {
+    return memoryQuestions.filter(q => q.status !== 'deleted' && (!topic || q.topic === topic));
+  }
+
+  let query = supabase
+    .from('questions')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(300);
+
+  if (topic) query = query.eq('topic', topic);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+async function findDuplicateQuestion(row) {
+  const existing = await loadExistingQuestions(row.topic);
+  let best = null;
+
+  for (const item of existing) {
+    const score = duplicateScore(row, item);
+    if (!best || score > best.score) best = { row: item, score };
+  }
+
+  if (best && best.score >= 0.88) return best;
+  return null;
+}
+
 
 function aiConfigured() {
   if (AI_PROVIDER === 'ollama') return true;
@@ -106,7 +181,7 @@ const questionSchema = {
   }
 };
 
-function buildGenerationPrompt({ topic, level, type, base_question = '', base_schema = '', base_answer = '' }) {
+function buildGenerationPrompt({ topic, level, type, base_question = '', base_schema = '', base_answer = '', existing_questions = [] }) {
   return [
     'Ты составляешь вопросы для подготовки к SQL-собеседованию.',
     'Верни только валидный JSON без markdown и без комментариев.',
@@ -139,7 +214,9 @@ function buildGenerationPrompt({ topic, level, type, base_question = '', base_sc
     `Создай один новый вопрос. Тема: ${topic}. Сложность: ${level}. Тип: ${type}.`,
     base_question ? `Базовый вопрос, от которого нужно отталкиваться: ${base_question}` : '',
     base_schema ? `Схема базового вопроса: ${base_schema}` : '',
-    base_answer ? `Правильный ответ базового вопроса: ${base_answer}` : ''
+    base_answer ? `Правильный ответ базового вопроса: ${base_answer}` : '',
+    existing_questions.length ? 'Уже существующие вопросы в этой теме. НЕ повторяй их и не создавай слишком похожий вопрос:' : '',
+    ...existing_questions.slice(0, 30).map((q, i) => `${i + 1}. ${q}`)
   ].join('\n');
 }
 
@@ -163,10 +240,10 @@ function extractJson(text) {
   }
 }
 
-async function generateWithOpenAI({ topic, level, type, base_question, base_schema, base_answer }) {
+async function generateWithOpenAI({ topic, level, type, base_question, base_schema, base_answer, existing_questions }) {
   if (!openai) throw new Error('OPENAI_API_KEY is not configured');
 
-  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer });
+  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer, existing_questions });
 
   const completion = await openai.chat.completions.create({
     model: OPENAI_MODEL,
@@ -183,10 +260,10 @@ async function generateWithOpenAI({ topic, level, type, base_question, base_sche
   return JSON.parse(completion.choices[0].message.content);
 }
 
-async function generateWithGemini({ topic, level, type, base_question, base_schema, base_answer }) {
+async function generateWithGemini({ topic, level, type, base_question, base_schema, base_answer, existing_questions }) {
   if (!hasRealValue(process.env.GEMINI_API_KEY)) throw new Error('GEMINI_API_KEY is not configured');
 
-  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer });
+  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer, existing_questions });
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
 
   const response = await fetch(url, {
@@ -211,8 +288,8 @@ async function generateWithGemini({ topic, level, type, base_question, base_sche
   return extractJson(text);
 }
 
-async function generateWithOllama({ topic, level, type, base_question, base_schema, base_answer }) {
-  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer });
+async function generateWithOllama({ topic, level, type, base_question, base_schema, base_answer, existing_questions }) {
+  const prompt = buildGenerationPrompt({ topic, level, type, base_question, base_schema, base_answer, existing_questions });
 
   const response = await fetch(`${OLLAMA_URL}/api/generate`, {
     method: 'POST',
@@ -242,9 +319,24 @@ async function generateQuestion(params) {
   throw new Error(`Unknown AI_PROVIDER: ${AI_PROVIDER}`);
 }
 
+
+app.get('/', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'SQL Interview Trainer backend',
+    serverVersion: SERVER_VERSION,
+    serverBuild: SERVER_BUILD,
+    health: '/health',
+    questions: '/questions',
+    topicStats: '/topic-stats'
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
+    serverVersion: SERVER_VERSION,
+    serverBuild: SERVER_BUILD,
     db: Boolean(supabase),
     ai: aiConfigured(),
     provider: AI_PROVIDER,
@@ -316,6 +408,23 @@ app.post('/questions', async (req, res) => {
       return res.status(400).json({ error: 'question and correct_answer are required' });
     }
 
+    if (looksCorruptedText(row.question) || looksCorruptedText(row.topic)) {
+      return res.status(400).json({
+        error: 'Question text looks corrupted. Generate another question.',
+        corrupted: true
+      });
+    }
+
+    const duplicate = await findDuplicateQuestion(row);
+    if (duplicate) {
+      return res.status(409).json({
+        error: 'Похожий вопрос уже есть в базе.',
+        duplicate: true,
+        score: duplicate.score,
+        existing: toClient(duplicate.row)
+      });
+    }
+
     if (!supabase) {
       const saved = { ...row, id: 'memory_' + Date.now(), created_at: new Date().toISOString() };
       memoryQuestions.unshift(saved);
@@ -348,10 +457,42 @@ app.post('/generate-question', async (req, res) => {
     const base_schema = req.body.base_schema || '';
     const base_answer = req.body.base_answer || '';
 
-    const generated = sanitizeQuestion(await generateQuestion({ topic, level, type, base_question, base_schema, base_answer }));
-    generated.topic = topic;
-    generated.level = level;
-    res.json(generated);
+    const existing = await loadExistingQuestions(topic);
+    const existing_questions = existing.map(q => q.question).filter(Boolean).slice(0, 30);
+    let lastDuplicate = null;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const generated = sanitizeQuestion(await generateQuestion({
+        topic,
+        level,
+        type,
+        base_question,
+        base_schema,
+        base_answer,
+        existing_questions
+      }));
+
+      generated.topic = topic;
+      generated.level = level;
+
+      if (looksCorruptedText(generated.question) || looksCorruptedText(generated.topic)) {
+        existing_questions.push(generated.question || 'corrupted question');
+        continue;
+      }
+
+      const duplicate = await findDuplicateQuestion(generated);
+      if (!duplicate) return res.json(generated);
+
+      lastDuplicate = duplicate;
+      existing_questions.push(generated.question);
+    }
+
+    return res.status(409).json({
+      error: 'ИИ сгенерировал вопрос, похожий на уже существующий. Нажмите «Ещё вариант».',
+      duplicate: true,
+      score: lastDuplicate?.score || null,
+      existing: lastDuplicate?.row ? toClient(lastDuplicate.row) : null
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -384,6 +525,6 @@ app.post('/attempts', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`SQL Interview Trainer backend running on http://localhost:${PORT}`);
+  console.log(`SQL Interview Trainer backend ${SERVER_VERSION} running on http://localhost:${PORT}`);
   console.log(`AI provider: ${AI_PROVIDER}`);
 });
